@@ -18,6 +18,18 @@ SELECT AddGeometryColumn ('','trigrid','the_geom',4326,'POLYGON',2);
 truncate trigrid;
 truncate tmp;
 select trigrid (-150,36,100,44,13,4326);
+
+
+ALTER table tblgrid add column cls integer;
+update tblgrid SET cls=0;
+update tblgrid SET cls=5 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb >=103092);
+update tblgrid SET cls=4 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb>=50150 and c.nb <103092) and g.cls=0);
+update tblgrid SET cls=3 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb>=31122 and c.nb <50150) and g.cls=0);
+update tblgrid SET cls=2 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb>=18014 and c.nb <31122) and g.cls=0);
+update tblgrid SET cls=1 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb <18014 and g.cls=0);
+
+
+
 --select * from tmp;
 
 --------------------------------
