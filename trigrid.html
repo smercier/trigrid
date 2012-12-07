@@ -40,12 +40,20 @@
 			transparent: true
 		});
 
+		var typo = new L.TileLayer.WMS("http://qc.mapgears.com:81/cgi-bin/mapserv?map=/var/www/osm_mapping/workspace/Simon/graytypo/osm-graytypo.map&", {
+			layers: 'default',
+			format: 'image/png',
+			transparent: true
+		});
+
+
                     map = new L.Map('map', {
 			center: new L.LatLng(45.4751,-73.568 ), 
 			zoom: 7,
-			layers: [gprint, trigrid],
+			layers: [gprint, trigrid,typo],
 			zoomControl: true
 		});
+
 
         </script>
 
