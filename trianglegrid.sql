@@ -1,164 +1,59 @@
---------------------------------
---Test SQL ----
---------------------------------
-insert into mytabe (61,61,1,ST_GeomFromText( 'POLYGON((16476.5403855637 115,16476.5403855637 125,16485.2006396016 120,16476.5403855637 115))'))  
-create table trigrid(gid as integer,tx as integer, ty as integer);
-SELECT AddGeometryColumn ('','trigrid','the_geom',32198,'POLYGON',2);
 
-drop table trigrid;
-create table trigrid(gid integer,tx integer, ty integer);
-SELECT AddGeometryColumn ('','trigrid','the_geom',32198,'POLYGON',2);
-insert into trigrid VALUES (61,61,1,ST_GeomFromText( 'POLYGON((16476.5403855637 115,16476.5403855637 125,16485.2006396016 120,16476.5403855637 115))',32198)) ;
+-- créer une table tirgrid level 1
+drop table trigrid_l1;
+create table trigrid_l1(gid integer,tx integer, ty integer);
+SELECT AddGeometryColumn ('','trigrid_l1','the_geom',4326,'POLYGON',2);
+select trigrid (-150,36,100,44,0.13,4326,'trigrid_l1');
+select count(*) from trigrid_l1;
+-- 605200
 
--- en degrés
-drop table trigrid;
-create table trigrid(gid integer,tx integer, ty integer);
-SELECT AddGeometryColumn ('','trigrid','the_geom',4326,'POLYGON',2);
-
-truncate trigrid;
-truncate tmp;
-select trigrid (-150,36,100,44,13,4326);
+-- créer une table tirgrid level 2
+drop table trigrid_l2;
+create table trigrid_l2(gid integer,tx integer, ty integer);
+SELECT AddGeometryColumn ('','trigrid_l2','the_geom',4326,'POLYGON',2);
+select trigrid (-150,36,100,44,0.065,4326,'trigrid_l2');
+select count(*) from trigrid_l2;
+-- 2410968
 
 
-ALTER table tblgrid add column cls integer;
-update tblgrid SET cls=0;
-update tblgrid SET cls=5 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb >=103092);
-update tblgrid SET cls=4 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb>=50150 and c.nb <103092) and g.cls=0);
-update tblgrid SET cls=3 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb>=31122 and c.nb <50150) and g.cls=0);
-update tblgrid SET cls=2 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb>=18014 and c.nb <31122) and g.cls=0);
-update tblgrid SET cls=1 where gid in(SELECT g.gid from census_pop_2012_division c, tblgrid g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb <18014 and g.cls=0);
+-- J'ai créer un table basée sur Census 2011 et je veux créer des classe Quantils rapidement.
+-- http://stackoverflow.com/questions/8529985/postgresql-aggregates-with-multiple-parameters
+SELECT ntile, avg(nb) AS avgAmount, max(nb) AS maxAmount, min(nb) AS  minAmount 
+FROM (SELECT nb, ntile(5) OVER (ORDER BY nb) AS ntile FROM census_pop_2012_division) x
+GROUP BY ntile ORDER BY ntile
+
+ntile	avgamount	   maxamount	minamount
+1       11736.7796610169   18000        629
+2       23135.5593220339   31138        18036
+3       39888.5762711864   50512        31333
+4       72870.1206896552   104075       50900
+5       428264.25862069    2615060      105719
 
 
+ssh smercier@qc.mapgears.com
 
---select * from tmp;
+-- j'ai traité un table de census pour le besoin de ce test.  Voir le fichier dans répertoire projet cencus
 
---------------------------------
- --- Fonction
-CREATE or replace FUNCTION trigrid(pt_x double precision, pt_y double precision, gx double precision, gy double precision, c double precision, epsg numeric,table_ char(100))
-  RETURNS character varying AS
-$BODY$
---/******************************************************************************************
---D Description: create a triangle geom base on input parameters.  Il est préférable de produire le grid en degre
---A Argus     : pt_x, pty = coord start grid
---              gx = largeur grid
---              gy = heuteur grid
---              c = longueur des côtés
---              epsg = epsg of x, y and distance
---              table_ = output table name
---           approx 200 m = 0.002 deg
---                  1 km = 0.013 deg
---O Output : A triangle geometry.
--- Spec :  voir http://pinterest.com/pin/145170787958002611/
--- Blog post : 
---******************************************************************************************/
-DECLARE
-tg_geom geometry;
-h DOUBLE PRECISION;
-nbt_x DOUBLE PRECISION;
-nbt_y DOUBLE PRECISION;
-ori_x DOUBLE PRECISION;
-gid integer;
-tg_string varchar(1000) ;
-BEGIN
-
-gid := 0;
-h := c*sqrt(3)/2;
-nbt_x := round(cast (gx/(2*h) as numeric),0);
-nbt_y := round(cast (gy/(2*c) as numeric),0);
-ori_x= pt_x;
-
-
--- on va systématiquement créer la table en fonction du EPSG
---tg_string :=  'BEGIN; drop table IF EXISTS ' ||table_;
---EXECUTE tg_string;
---tg_string :=  'create table ' ||table_||'(gid integer,tx integer, ty integer)';
---EXECUTE tg_string;
---tg_string :=  'SELECT AddGeometryColumn ('''',''' ||table_||''',''the_geom'',' ||epsg||',''POLYGON'',2)';
---EXECUTE tg_string;
-
---tg_string :=  'BEGIN; drop table IF EXISTS ' ||table_||';create table ' ||table_||'(gid integer,tx integer, ty integer);commit;SELECT AddGeometryColumn ('''',''' ||table_||''',''the_geom'',' ||epsg||',''POLYGON'',2);commit; END;';
---EXECUTE tg_string;
-
- FOR ty IN 1..nbt_y+1 LOOP
-
-   FOR tx IN 1..nbt_x+1 LOOP
-  
-        -- tri 1  ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y ||','|| pt_x-h ||' '|| pt_y+c/2 ||','|| pt_x-h ||' '|| pt_y-(c/2) ||','|| pt_x ||' '||pt_y||'))'; 
-       gid := gid+1;
-        --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-        EXECUTE tg_string;
-
-        -- tri 2  ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y ||','|| pt_x-h ||' '|| pt_y-c/2 ||','|| pt_x ||' '|| pt_y-c ||','|| pt_x ||' '||pt_y||'))'; 
-        gid := gid+1;
-       --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-       EXECUTE tg_string;
-
-        -- tri 3  ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y ||','|| pt_x ||' '|| pt_y-c ||','|| pt_x+h ||' '|| pt_y-(c/2) ||','|| pt_x ||' '||pt_y||'))'; 
-       gid := gid+1;
-       --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-       EXECUTE tg_string;
-
-        -- tri 4  ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y ||','|| pt_x+h ||' '|| pt_y-c/2 ||','|| pt_x+h ||' '|| pt_y+(c/2) ||','|| pt_x ||' '||pt_y||'))'; 
-       gid := gid+1;
-       --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-       EXECUTE tg_string;
-
-        -- tri 5  ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y ||','|| pt_x+h ||' '|| pt_y+c/2 ||','|| pt_x ||' '|| pt_y+c ||','|| pt_x ||' '||pt_y||'))'; 
-       gid := gid+1;
-       --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-       EXECUTE tg_string;
-
-        -- tri 6 ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y ||','|| pt_x ||' '|| pt_y+c ||','|| pt_x-h ||' '|| pt_y+(c/2) ||','|| pt_x ||' '||pt_y||'))'; 
-       gid := gid+1;
-       --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-       EXECUTE tg_string;
-
-        -- tri 7 ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y -c ||','|| pt_x -h ||' '|| pt_y-c+(c/2) ||','|| pt_x-h ||' '|| pt_y-c-(c/2) ||','|| pt_x ||' '||pt_y-c||'))'; 
-       gid := gid+1;
-       --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-       EXECUTE tg_string;
-
-        -- tri 8 ----------------
-        tg_string:='POLYGON(('|| pt_x ||' '|| pt_y-c ||','|| pt_x +h ||' '|| pt_y -c+(c/2) ||','|| pt_x+h ||' '|| pt_y-c -(c/2) ||','|| pt_x ||' '||pt_y-c||'))';
-       gid := gid+1; 
-       --ajouter tg à la table de données 
-        tg_string:= 'insert into ' ||table_||' VALUES ('||gid||','|| tx||','|| ty||',ST_GeomFromText( '''||tg_string||''','||epsg||'))';
-       EXECUTE tg_string;
-      ------------------------- 
-
-       --ajuster la valeur de x en fonction de l'itération. en x deux fois la hauteur
-       pt_x := pt_x + (2*h);       
-
-
-   END LOOP;
-
-   --ajuster la valeur de y en fonction de l'itération. en y deux fois un côté
-   pt_y := pt_y + (2 * c);  
-  -- et en x on reviens au départ 
-  pt_x := ori_x;
-
-
-END LOOP;
-
- return cast (nbt_y*nbt_y as character varying)||' triangles';
-END; $BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
-
-
-
+ALTER table trigrid_l1 add column cls integer;
+update trigrid_l1 SET cls=5 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l1 g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb >105719);
+--
+update trigrid_l1 SET cls=4 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l1 g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb> 50900 or c.nb <=105719));
+--
+update trigrid_l1 SET cls=3 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l1 g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb> 31333 or c.nb <=50900));
+--
+update trigrid_l1 SET cls=2 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l1 g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb> 18036 or c.nb <=31333));
+--
+update trigrid_l1 SET cls=1 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l1 g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb <=18036);
+--
+ALTER table trigrid_l2 add column cls integer;
+update trigrid_l2 SET cls=5 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l2 g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb >105719);
+--
+update trigrid_l2 SET cls=4 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l2 g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb> 50900 or c.nb <=105719));
+--
+update trigrid_l2 SET cls=3 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l2 g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb> 31333 or c.nb <=50900));
+--
+update trigrid_l2 SET cls=2 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l2 g WHERE ST_Intersects(c.the_geom,g.the_geom) and (c.nb> 18036 or c.nb <=31333));
+--
+update trigrid_l2 SET cls=1 where gid in(SELECT g.gid from census_pop_2012_division c, trigrid_l2 g WHERE ST_Intersects(c.the_geom,g.the_geom) and c.nb <=18036);
+-
 
