@@ -29,10 +29,10 @@
         tilejson: '1.0.0',
         tms: 'true',
         maxZoom: 18,
-        attribution: 'Produit par <a href="http://mapgears.com">Mapgears</a>, &copy; <a href="http://www.openstreetmap.org/copyright/en">OpenStreetMap</a> contributors'
+        attribution: 'Produced by <a href="http://mapgears.com">Mapgears</a>, &copy; <a href="http://www.openstreetmap.org/copyright/en">OpenStreetMap</a> contributors'
          };
                // var map = L.map('map').setView([45.4751,-73.568 ], 11);
-                var gprint = L.tileLayer('http://cartalib.mapgears.com/mapcache/tms/1.0.0/grayprint_v1@g/{z}/{x}/{y}.png', tilejson);
+                var gprint = L.tileLayer('http://cartalib.mapgears.com/mapcache/tms/1.0.0/graySANStypo_v1@g/{z}/{x}/{y}.png', tilejson);
 
 		var trigrid = new L.TileLayer.WMS("http://simonmercier.net/cgi-bin/mapserv?map=/opt/mapfileit/projects/mapfiles/trigrid.map&", {
 			layers: 'default',
@@ -40,17 +40,17 @@
 			transparent: true
 		});
 
-		var typo = new L.TileLayer.WMS("http://qc.mapgears.com:81/cgi-bin/mapserv?map=/var/www/osm_mapping/workspace/Simon/graytypo/osm-graytypo.map&", {
-			layers: 'default',
-			format: 'image/png',
-			transparent: true
-		});
+		//var typo = new L.TileLayer.WMS("http://&", {
+		//	layers: 'default',
+		//	format: 'image/png',
+		//	transparent: true
+		//});
 
 
                     map = new L.Map('map', {
 			center: new L.LatLng(45.4751,-73.568 ), 
 			zoom: 7,
-			layers: [gprint, trigrid,typo],
+			layers: [gprint, trigrid],
 			zoomControl: true
 		});
 
