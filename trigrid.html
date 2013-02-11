@@ -34,7 +34,7 @@
                // var map = L.map('map').setView([45.4751,-73.568 ], 11);
                 var gprint = L.tileLayer('http://cartalib.mapgears.com/mapcache/tms/1.0.0/grayprint_v1@g/{z}/{x}/{y}.png', tilejson);
 
-		var trigrid = new L.TileLayer.WMS("http://qc.mapgears.com:81/cgi-bin/mapserv?map=/var/www/osm_mapping/workspace/Simon/noucal/tgrid.map&", {
+		var trigrid = new L.TileLayer.WMS("http://simonmercier.net/cgi-bin/mapserv?map=/opt/mapfileit/projects/mapfiles/trigrid.map&", {
 			layers: 'default',
 			format: 'image/png',
 			transparent: true
