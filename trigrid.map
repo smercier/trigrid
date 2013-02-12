@@ -1,0 +1,190 @@
+MAP
+NAME "trigrid"
+#FONTSET "fonts.lst"
+IMAGETYPE png
+MAXSIZE 4000
+SIZE 800 800
+EXTENT -20000000 -20000000 20000000 20000000
+UNITS meters
+IMAGECOLOR 255 255 255 
+WEB
+   METADATA
+      "ows_enable_request" "*"
+      "wms_srs" "EPSG:4326 EPSG:3857 EPSG:2154 EPSG:2986"
+      "labelcache_map_edge_buffer" "-10"
+      "wms_title" "trigrid"
+   END
+   IMAGEPATH "/tmp/ms_tmp/"
+   IMAGEURL "/ms_tmp/"
+END
+CONFIG "MS_ERRORFILE" "../debugFile.log"
+PROJECTION
+   "init=epsg:3857"
+END
+
+LAYER
+    TYPE POLYGON
+    STATUS ON
+    GROUP "default"
+    NAME "trigrid_l1"
+    PROJECTION
+        "init=epsg:4326"
+    END
+    CONNECTIONTYPE postgis
+    CONNECTION "host=10.1.0.213 dbname=geo user=geo password=geo port=5432"
+    DATA "the_geom from trigrid_l1 using unique gid using srid=4326"
+    CLASSITEM "cls"
+    #OPACITY 30
+    MINSCALEDENOM 1000000
+    CLASS
+        EXPRESSION "5"
+        STYLE
+            color 28 57 152
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 60
+        END
+    END
+    CLASS
+        EXPRESSION "4"
+        STYLE
+            color 76 102 177
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 50
+        END
+    END
+    CLASS
+        EXPRESSION "3"
+        STYLE
+            color 124 147 203
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 40
+        END
+    END
+    CLASS
+        EXPRESSION "2"
+        STYLE
+            color 172 192 229
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 30
+        END
+    END
+    CLASS
+        EXPRESSION "1"
+        STYLE
+            color 221 238 255
+            outlinecolor 28 57 152
+            width 0.2
+            opacity 40
+        END
+    END
+END
+
+LAYER
+    TYPE POLYGON
+    STATUS ON
+    GROUP "default"
+    NAME "trigrid_l1_ol"
+    PROJECTION
+        "init=epsg:4326"
+    END
+    CONNECTIONTYPE postgis
+    CONNECTION "host=10.1.0.213 dbname=geo user=geo password=geo port=5432"
+    DATA "the_geom from (select * from trigrid_l1 where cls>0) as foo using unique gid using srid=4326"
+    CLASSITEM "cls"
+    #OPACITY 30
+    MINSCALEDENOM 1000000
+    CLASS
+        STYLE
+            outlinecolor 255 255 255
+            width 0.2
+        END
+    END
+END
+LAYER
+    TYPE POLYGON
+    STATUS ON
+    GROUP "default"
+    NAME "trigrid_l1"
+    PROJECTION
+        "init=epsg:4326"
+    END
+    CONNECTIONTYPE postgis
+    CONNECTION "host=10.1.0.213 dbname=geo user=geo password=geo port=5432"
+    DATA "the_geom from trigrid_l2 using unique gid using srid=4326"
+    CLASSITEM "cls"
+    #OPACITY 30
+    MAXSCALEDENOM 1000000
+    CLASS
+        EXPRESSION "5"
+        STYLE
+            color 28 57 152
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 60
+        END
+    END
+    CLASS
+        EXPRESSION "4"
+        STYLE
+            color 76 102 177
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 50
+        END
+    END
+    CLASS
+        EXPRESSION "3"
+        STYLE
+            color 124 147 203
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 40
+        END
+    END
+    CLASS
+        EXPRESSION "2"
+        STYLE
+            color 172 192 229
+            outlinecolor 255 255 255
+            width 0.2
+            opacity 30
+        END
+    END
+    CLASS
+        EXPRESSION "1"
+        STYLE
+            color 221 238 255
+            outlinecolor 28 57 152
+            width 0.2
+            opacity 40
+        END
+    END
+END
+
+LAYER
+    TYPE POLYGON
+    STATUS ON
+    GROUP "default"
+    NAME "trigrid_l1_ol"
+    PROJECTION
+        "init=epsg:4326"
+    END
+    CONNECTIONTYPE postgis
+    CONNECTION "host=10.1.0.213 dbname=geo user=geo password=geo port=5432"
+    DATA "the_geom from (select * from trigrid_l2 where cls>0) as foo using unique gid using srid=4326"
+    CLASSITEM "cls"
+    #OPACITY 30
+    MAXSCALEDENOM 1000000
+    CLASS
+        STYLE
+            outlinecolor 255 255 255
+            width 0.2
+        END
+    END
+END
+
+END
